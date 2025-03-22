@@ -105,6 +105,15 @@ public class Main extends PluginBase implements Listener {
                 permissionAttachments.put(player, attachment);
             }
         }
+
+        if (isInLobbyWorld(player)) {
+            int delay = config.getInt("delay") * 20;
+            getServer().getScheduler().scheduleDelayedTask(this, () -> {
+                if (isInLobbyWorld(player)) { // 二次验证
+                    setLobbyInventory(player);
+                }
+            }, delay);
+        }
     }
 
     private void setLobbyInventory(Player player) {
