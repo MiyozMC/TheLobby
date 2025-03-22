@@ -181,6 +181,71 @@ public class Main extends PluginBase implements Listener {
         }
     }
 
+    @EventHandler
+    public void onEntityDamage(EntityDamageEvent event) {
+        if (event.getEntity() instanceof Player) {
+            Player player = (Player) event.getEntity();
+            if (isInLobbyWorld(player)) {
+                // 伤害处理
+                event.setCancelled(!config.getBoolean("can_hurt"));
+                // 生命值锁定
+                if (config.getBoolean("lock_life")) {
+                    player.setHealth(config.getInt("life"));
+                }
+            }
+        }
+    }
+
+    @EventHandler
+    public void onBlockPlace(BlockPlaceEvent event) {
+        if (isInLobbyWorld(event.getPlayer()) && !event.getPlayer().hasPermission("lobby.build")) {
+            event.setCancelled(true);
+        }
+    }
+
+    @EventHandler
+    public void onBlockBreak(BlockBreakEvent event) {
+        if (isInLobbyWorld(event.getPlayer()) && !event.getPlayer().hasPermission("lobby.build")) {
+            event.setCancelled(true);
+        }
+    }
+
+    @EventHandler
+    public void onPlayerExperienceChange(PlayerExperienceChangeEvent event) {
+        if (isInLobbyWorld(event.getPlayer())) {
+            event.getPlayer().setExperience(config.getInt("exp"));
+        }
+    }
+
+    @EventHandler
+    public void onEntityDamageByEntity(EntityDamageByEntityEvent event) {
+        if (event.getDamager() instanceof Player && event.getEntity() instanceof Player) {
+            Player attacker = (Player) event.getDamager();
+            Player victim = (Player) event.getEntity();
+
+            if (isInLobbyWorld(attacker) || isInLobbyWorld(victim)) {
+                event.setCancelled(!config.getBoolean("can_pvp"));
+            }
+        }
+    }
+
+    @EventHandler
+    public void onPlayerTeleport(PlayerTeleportEvent event) {
+        Player player = event.getPlayer();
+        PermissionAttachment attachment = permissionAttachments.get(player);
+
+        if (attachment == null) {
+            attachment = player.addAttachment(this);
+            permissionAttachments.put(player, attachment);
+        }
+
+        boolean canBuild = config.getStringList("build_player")
+                .stream()
+                .anyMatch(name -> name.equalsIgnoreCase(player.getName()));
+
+        attachment.setPermission("lobby.build", canBuild);
+    }
+
     public Config getConfig() {
         return config;
     }
